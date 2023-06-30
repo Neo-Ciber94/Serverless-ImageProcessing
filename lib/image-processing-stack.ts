@@ -1,5 +1,5 @@
-import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
+import * as cdk from 'aws-cdk-lib';
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as path from 'path';
@@ -13,7 +13,9 @@ export class ImageProcessingStack extends cdk.Stack {
       runtime: lambda.Runtime.PROVIDED_AL2,
       code: lambda.Code.fromAsset(path.join(__dirname, "..", "functions/image-processing/target/lambda/image-processing")),
       handler: "dummy",
-      logRetention: awsLogs.RetentionDays.ONE_WEEK
+      logRetention: awsLogs.RetentionDays.ONE_WEEK,
+      memorySize: 128,
+      tracing: lambda.Tracing.ACTIVE
     });
 
     const api = new apigateway.RestApi(this, "Api", {
@@ -21,7 +23,7 @@ export class ImageProcessingStack extends cdk.Stack {
       description: "ApiGateway for image processing handlers",
     });
 
-    const getWidgetsIntegration = new apigateway.LambdaIntegration(handler);
-    api.root.addMethod("GET", getWidgetsIntegration);
+    const imageEndpoint = api.root.addResource("/api/image");
+    imageEndpoint.addMethod("GET", new apigateway.LambdaIntegration(handler));
   }
 }
