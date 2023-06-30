@@ -23,9 +23,5 @@ export class ImageProcessingStack extends cdk.Stack {
 
     const getWidgetsIntegration = new apigateway.LambdaIntegration(handler);
     api.root.addMethod("GET", getWidgetsIntegration);
-
-    new cdk.CfnOutput(this, "ApiUrl", {
-      value: api.url
-    })
   }
 }
