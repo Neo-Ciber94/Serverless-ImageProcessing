@@ -1,16 +1,31 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-// import * as sqs from 'aws-cdk-lib/aws-sqs';
+import * as apigateway from "aws-cdk-lib/aws-apigateway";
+import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as path from 'path';
+import * as awsLogs from 'aws-cdk-lib/aws-logs';
 
 export class ImageProcessingStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    // The code that defines your stack goes here
+    const handler = new lambda.Function(this, "ImageProcessingHandler", {
+      runtime: lambda.Runtime.PROVIDED_AL2,
+      code: lambda.Code.fromAsset(path.join(__dirname, "..", "functions/image-processing/target/lambda/image-processing")),
+      handler: "",
+      logRetention: awsLogs.RetentionDays.ONE_WEEK
+    });
 
-    // example resource
-    // const queue = new sqs.Queue(this, 'ImageProcessingQueue', {
-    //   visibilityTimeout: cdk.Duration.seconds(300)
-    // });
+    const api = new apigateway.RestApi(this, "Image Processing API", {
+      restApiName: "ImageProcessing-Api",
+      description: "ApiGateway for image processing handlers",
+    });
+
+    const getWidgetsIntegration = new apigateway.LambdaIntegration(handler);
+    api.root.addMethod("GET", getWidgetsIntegration);
+
+    new cdk.CfnOutput(this, "ImageProcessingApiUrl", {
+      value: api.url
+    })
   }
 }
