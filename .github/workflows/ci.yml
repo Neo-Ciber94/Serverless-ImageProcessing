@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    # Install Cargo Lambda
+    - name: Install Cargo Lambda
+    - uses: actions/setup-python@v4 
+      with:
+        python-version: 'pypy3.9' 
+    - run: pip3 install cargo-lambda
+    
+    # Build
+    - name: Build
+      run: |
+        cd functions/image-processing
+        cargo lambda build --release
+    # Run tests
+    - name: Run tests
+      run: cargo test --verbose
