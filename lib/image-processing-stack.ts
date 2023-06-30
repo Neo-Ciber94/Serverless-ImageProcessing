@@ -9,14 +9,14 @@ export class ImageProcessingStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const handler = new lambda.Function(this, "ImageProcessingHandler", {
+    const handler = new lambda.Function(this, "Handler", {
       runtime: lambda.Runtime.PROVIDED_AL2,
       code: lambda.Code.fromAsset(path.join(__dirname, "..", "functions/image-processing/target/lambda/image-processing")),
-      handler: "",
+      handler: "dummy",
       logRetention: awsLogs.RetentionDays.ONE_WEEK
     });
 
-    const api = new apigateway.RestApi(this, "Image Processing API", {
+    const api = new apigateway.RestApi(this, "Api", {
       restApiName: "ImageProcessing-Api",
       description: "ApiGateway for image processing handlers",
     });
@@ -24,7 +24,7 @@ export class ImageProcessingStack extends cdk.Stack {
     const getWidgetsIntegration = new apigateway.LambdaIntegration(handler);
     api.root.addMethod("GET", getWidgetsIntegration);
 
-    new cdk.CfnOutput(this, "ImageProcessingApiUrl", {
+    new cdk.CfnOutput(this, "ApiUrl", {
       value: api.url
     })
   }
