@@ -40,16 +40,18 @@ pub async fn get_image_endpoint(request: Request) -> Result<Response<Body>, Resp
         ));
     }
 
-    let result = if let Some(url) = query.source_url.take() {
-        url_handler(url, query).await
+    let image_data_result = if let Some(url) = query.source_url.take() {
+        get_image_bytes_from_url(url).await
     } else if let Some(base64) = query.source_base64.take() {
-        base64_handler(base64, query).await
+        get_image_from_base64(base64).await
     } else {
         unreachable!()
     };
 
-    match result {
-        Ok(res) => Ok(res),
+    let (buffer, format) = image_data_result.map_err(ResponseError::from_error)?;
+
+    match get_response_image(buffer, format, query).await {
+        Ok(x) => Ok(x),
         Err(err) => {
             if err.is::<ProcessImageError>() {
                 let err = *err.downcast::<ProcessImageError>().unwrap();
@@ -62,7 +64,7 @@ pub async fn get_image_endpoint(request: Request) -> Result<Response<Body>, Resp
 }
 
 #[tracing::instrument]
-async fn url_handler(url: String, query: ImageManipulationQuery) -> Result<Response<Body>, Error> {
+async fn get_image_bytes_from_url(url: String) -> Result<(Vec<u8>, ImageFormat), Error> {
     let res = reqwest::get(url).await?;
 
     let content_type = res
@@ -76,6 +78,19 @@ async fn url_handler(url: String, query: ImageManipulationQuery) -> Result<Respo
     let format = ImageFormat::from_mime_type(content_type_str)
         .ok_or_else(|| Error::from("failed to read format"))?;
 
+    Ok((buffer, format))
+}
+
+#[tracing::instrument]
+async fn get_image_from_base64(base64: String) -> Result<(Vec<u8>, ImageFormat), Error> {
+    todo!()
+}
+
+async fn get_response_image(
+    buffer: Vec<u8>,
+    format: ImageFormat,
+    query: ImageManipulationQuery,
+) -> Result<Response<Body>, Error> {
     let options = ProcessingOptions {
         buffer,
         format,
@@ -97,12 +112,4 @@ async fn url_handler(url: String, query: ImageManipulationQuery) -> Result<Respo
         )
         .body(body)
         .map_err(Error::from)
-}
-
-#[tracing::instrument]
-async fn base64_handler(
-    base64: String,
-    query: ImageManipulationQuery,
-) -> Result<Response<Body>, Error> {
-    todo!()
 }

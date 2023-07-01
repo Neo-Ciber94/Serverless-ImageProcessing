@@ -48,7 +48,7 @@ async fn main() {
         let request = Request::from_parts(parts, Body::Binary(bytes.to_vec()))
             .with_query_string_parameters(query);
 
-        let res = match handlers::image_handler(request).await {
+        let res = match image_processing::api::get_image_endpoint(request).await {
             Ok(x) => x,
             Err(err) => {
                 return (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response();

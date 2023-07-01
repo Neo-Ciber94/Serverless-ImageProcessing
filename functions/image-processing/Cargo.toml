@@ -23,11 +23,12 @@ tracing = { version = "0.1", features = ["log"] }
 tracing-subscriber = { version = "0.3", default-features = false, features = [
     "fmt",
 ] }
+thiserror = "1.0.40"
 
 # Development only
 axum = { version = "0.6.18", optional = true }
 hyper = { version = "0.14.27", optional = true }
-thiserror = "1.0.40"
+
 
 [features]
 local = ["axum", "hyper"]
