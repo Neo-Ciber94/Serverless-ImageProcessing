@@ -41,7 +41,7 @@ jobs:
         cargo test --verbose
     
     # Deploy
-    - name: cdk diff
+    - name: Deploy
       uses: youyo/aws-cdk-github-actions@v2
       with:
         cdk_subcommand: 'deploy'

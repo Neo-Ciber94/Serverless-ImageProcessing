@@ -18,12 +18,13 @@ export class ImageProcessingStack extends cdk.Stack {
       tracing: lambda.Tracing.ACTIVE
     });
 
-    const api = new apigateway.RestApi(this, "Api", {
+    const restApi = new apigateway.RestApi(this, "Api", {
       restApiName: "ImageProcessing-Api",
       description: "ApiGateway for image processing handlers",
     });
 
-    const imageEndpoint = api.root.addResource("/api/image");
+    const api = restApi.root.addResource("api");
+    const imageEndpoint = api.addResource("image");
     imageEndpoint.addMethod("GET", new apigateway.LambdaIntegration(handler));
   }
 }
