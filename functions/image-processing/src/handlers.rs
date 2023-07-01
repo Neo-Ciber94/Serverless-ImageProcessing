@@ -1,8 +1,8 @@
-use base64::{engine::general_purpose, Engine as _};
 use image::ImageFormat;
-use image_processing::{process_image, ProcessingOptions};
-use lambda_http::{http::HeaderValue, Body, Error, Request, RequestExt, Response};
-use reqwest::header;
+use image_processing::{error::ResponseError, process_image, ProcessingOptions};
+use lambda_http::{http::HeaderValue, Body, Request, RequestExt, Response};
+use lambda_runtime::Error;
+use reqwest::{header, StatusCode};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -13,26 +13,33 @@ pub struct ImageManipulationQuery {
     pub quality: Option<u8>,
 }
 
-pub async fn image_handler(request: Request) -> Result<Response<Body>, Error> {
+pub async fn image_handler(request: Request) -> Result<Response<Body>, ResponseError> {
     let query_map = request
         .query_string_parameters_ref()
-        .ok_or_else(|| Error::from("missing image query params"))?;
+        .ok_or_else(|| ResponseError::new(StatusCode::BAD_REQUEST, "missing image query params"))?;
 
     let query_str = query_map.to_query_string();
-    let mut query: ImageManipulationQuery = serde_qs::from_str(&query_str).map_err(Box::new)?;
+    let mut query: ImageManipulationQuery = serde_qs::from_str(&query_str)
+        .map_err(|e| ResponseError::new(StatusCode::BAD_REQUEST, e.to_string()))?;
 
     if query.source_base64.is_none() && query.source_url.is_none() {
-        return Err(Error::from(
+        return Err(ResponseError::new(
+            StatusCode::BAD_REQUEST,
             "query string should contains `source_url` or `source_base64`",
         ));
     } else if query.source_base64.is_some() && query.source_url.is_some() {
-        return Err(Error::from(
+        return Err(ResponseError::new(
+            StatusCode::BAD_REQUEST,
             "query string cannot contains both, `source_url` and `source_base64`",
         ));
     } else if let Some(url) = query.source_url.take() {
-        handler_image_from_url(url, query).await
+        handler_image_from_url(url, query)
+            .await
+            .map_err(|e| ResponseError::new(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
     } else if let Some(base64) = query.source_base64.take() {
-        handler_image_from_base64(base64, query).await
+        handler_image_from_base64(base64, query)
+            .await
+            .map_err(|e| ResponseError::new(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
     } else {
         unreachable!()
     }

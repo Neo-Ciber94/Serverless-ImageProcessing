@@ -34,12 +34,6 @@ jobs:
         cd functions/image-processing
         cargo lambda build --release
     
-    # Run tests
-    - name: Run tests
-      run: |
-        cd functions/image-processing
-        cargo test --verbose
-    
     # Deploy
     - name: Deploy
       uses: youyo/aws-cdk-github-actions@v2

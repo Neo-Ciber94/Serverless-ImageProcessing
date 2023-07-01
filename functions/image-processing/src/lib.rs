@@ -1,5 +1,7 @@
+pub mod error;
+
+use error::BoxError;
 use image::{imageops::FilterType, ImageFormat, ImageOutputFormat};
-use lambda_runtime::Error;
 use std::io::Cursor;
 
 const DEFAULT_QUALITY: u8 = 100;
@@ -16,7 +18,7 @@ pub struct ImageByteBuffer {
     pub format: ImageFormat,
 }
 
-pub async fn process_image(options: ProcessingOptions) -> Result<ImageByteBuffer, Error> {
+pub async fn process_image(options: ProcessingOptions) -> Result<ImageByteBuffer, BoxError> {
     let ProcessingOptions {
         buffer,
         format,

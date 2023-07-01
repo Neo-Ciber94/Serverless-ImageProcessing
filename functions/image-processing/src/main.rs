@@ -1,8 +1,11 @@
 mod handlers;
-use lambda_http::{run, service_fn, Body, Error, Request, Response};
+use lambda_http::{run, service_fn, Body, Error, IntoResponse, Request, Response};
 
 async fn function_handler(request: Request) -> Result<Response<Body>, Error> {
-    handlers::image_handler(request).await
+    match handlers::image_handler(request).await {
+        Ok(res) => Ok(res),
+        Err(err) => Ok(err.into_response().await),
+    }
 }
 
 #[tokio::main]
