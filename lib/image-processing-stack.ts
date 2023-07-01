@@ -15,7 +15,8 @@ export class ImageProcessingStack extends cdk.Stack {
       handler: "dummy",
       logRetention: awsLogs.RetentionDays.ONE_WEEK,
       memorySize: 128,
-      tracing: lambda.Tracing.ACTIVE
+      tracing: lambda.Tracing.ACTIVE,
+      timeout: cdk.Duration.minutes(3)
     });
 
     const restApi = new apigateway.RestApi(this, "Api", {
