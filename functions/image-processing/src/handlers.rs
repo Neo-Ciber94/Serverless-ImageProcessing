@@ -1,9 +1,8 @@
 use image::ImageFormat;
 use image_processing::{process_image, ProcessingOptions};
 use lambda_http::{http::HeaderValue, Body, Error, Request, RequestExt, Response};
-use reqwest::header;
 use serde::{Deserialize, Serialize};
-
+use reqwest::header;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ImageManipulationQuery {
@@ -43,6 +42,7 @@ async fn handler_image_from_url(
     query: ImageManipulationQuery,
 ) -> Result<Response<Body>, Error> {
     let res = reqwest::get(url).await?;
+
     let content_type = res
         .headers()
         .get(header::CONTENT_TYPE)

@@ -22,11 +22,33 @@ jobs:
         python-version: 'pypy3.9' 
     - run: pip3 install cargo-lambda
     
+    # Build Stack
+    - name: Build Stack
+      run: |
+        npm ci
+        npm run build
+    
     # Build
-    - name: Build
+    - name: Build Lambda
       run: |
         cd functions/image-processing
         cargo lambda build --release
+    
     # Run tests
     - name: Run tests
-      run: cargo test --verbose
+      run: |
+        cd functions/image-processing
+        cargo test --verbose
+    
+    # Deploy
+    - name: cdk diff
+      uses: youyo/aws-cdk-github-actions@v2
+      with:
+        cdk_subcommand: 'deploy'
+        cdk_args: '--require-approval never'
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+
+
