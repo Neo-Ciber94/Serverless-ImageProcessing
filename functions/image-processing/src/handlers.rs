@@ -66,8 +66,8 @@ async fn handler_image_from_url(
     let image_format: ImageFormat = image_buffer.format.into();
     let res_content_type = format!("image/{}", image_format.extensions_str()[0]);
 
-    let body_base64 = general_purpose::STANDARD_NO_PAD.encode(&image_buffer.buf);
-    let body = Body::Binary(body_base64.into_bytes());
+    //let body_base64 = general_purpose::STANDARD_NO_PAD.encode(&image_buffer.buf);
+    let body = Body::Binary(image_buffer.buf);
     Response::builder()
         .header(
             header::CONTENT_TYPE,

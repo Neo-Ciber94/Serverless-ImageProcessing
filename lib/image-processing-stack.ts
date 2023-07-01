@@ -22,7 +22,7 @@ export class ImageProcessingStack extends cdk.Stack {
     const restApi = new apigateway.RestApi(this, "Api", {
       restApiName: "ImageProcessing-Api",
       description: "ApiGateway for image processing handlers",
-      binaryMediaTypes: ["image/*"]
+      binaryMediaTypes: ["*/*"]
     });
 
     const api = restApi.root.addResource("api");

@@ -24,12 +24,12 @@ pub async fn process_image(options: ProcessingOptions) -> Result<ImageByteBuffer
         quality,
     } = options;
 
-    let img = image::load(Cursor::new(buffer), format)?;
+    let mut img = image::load(Cursor::new(buffer), format)?;
 
     if let Some(width) = width {
-        let height_f = img.width() as f64 / width as f64;
+        let height_f = (width as f64 / img.width() as f64) * img.height() as f64;
         let height = height_f as u32;
-        img.resize(width, height, FilterType::Lanczos3);
+        img = img.resize(width, height, FilterType::Lanczos3);
     }
 
     let mut cursor = Cursor::new(vec![]);
