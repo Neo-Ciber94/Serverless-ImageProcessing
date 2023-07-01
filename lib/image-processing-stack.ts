@@ -11,7 +11,7 @@ export class ImageProcessingStack extends cdk.Stack {
 
     const handler = new lambda.Function(this, "Handler", {
       runtime: lambda.Runtime.PROVIDED_AL2,
-      code: lambda.Code.fromAsset(path.join(__dirname, "..", "functions/image-processing/target/lambda/image-processing")),
+      code: lambda.Code.fromAsset(path.join(__dirname, "..", "functions/image-processing/target/lambda/get_image")),
       handler: "dummy",
       logRetention: awsLogs.RetentionDays.FIVE_DAYS,
       memorySize: 128,

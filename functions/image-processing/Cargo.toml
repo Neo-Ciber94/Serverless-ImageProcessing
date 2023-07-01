@@ -3,6 +3,9 @@ name = "image-processing"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "get_image"
+
 [dependencies]
 base64 = "0.21.2"
 image = "0.24.6"
