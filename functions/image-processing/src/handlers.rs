@@ -1,8 +1,9 @@
+use base64::{engine::general_purpose, Engine as _};
 use image::ImageFormat;
 use image_processing::{process_image, ProcessingOptions};
 use lambda_http::{http::HeaderValue, Body, Error, Request, RequestExt, Response};
-use serde::{Deserialize, Serialize};
 use reqwest::header;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ImageManipulationQuery {
@@ -63,9 +64,10 @@ async fn handler_image_from_url(
 
     let image_buffer = process_image(options).await?;
     let image_format: ImageFormat = image_buffer.format.into();
-    let body = Body::Binary(image_buffer.buf);
     let res_content_type = format!("image/{}", image_format.extensions_str()[0]);
 
+    let body_base64 = general_purpose::STANDARD_NO_PAD.encode(&image_buffer.buf);
+    let body = Body::Binary(body_base64.into_bytes());
     Response::builder()
         .header(
             header::CONTENT_TYPE,

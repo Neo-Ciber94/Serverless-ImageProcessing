@@ -548,6 +548,7 @@ dependencies = [
 name = "image-processing"
 version = "0.1.0"
 dependencies = [
+ "base64",
  "image",
  "lambda_http",
  "lambda_runtime",
