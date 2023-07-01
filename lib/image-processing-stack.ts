@@ -13,7 +13,7 @@ export class ImageProcessingStack extends cdk.Stack {
       runtime: lambda.Runtime.PROVIDED_AL2,
       code: lambda.Code.fromAsset(path.join(__dirname, "..", "functions/image-processing/target/lambda/image-processing")),
       handler: "dummy",
-      logRetention: awsLogs.RetentionDays.ONE_WEEK,
+      logRetention: awsLogs.RetentionDays.FIVE_DAYS,
       memorySize: 128,
       tracing: lambda.Tracing.ACTIVE,
       timeout: cdk.Duration.minutes(3)
