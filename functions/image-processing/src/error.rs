@@ -7,7 +7,6 @@ use lambda_http::{Body, IntoResponse, Response};
 use reqwest::{header, StatusCode};
 use thiserror::Error;
 
-pub type BoxError = Box<dyn std::error::Error + Send + Sync>;
 pub type ResponseFuture = Pin<Box<dyn Future<Output = Response<Body>> + Send>>;
 
 #[derive(Debug, Error)]
@@ -25,7 +24,10 @@ impl ResponseError {
         }
     }
 
-    pub fn from_error<E>(error: impl Into<Box<dyn std::error::Error + Send + Sync>>) -> Self {
+    pub fn from_error<E>(error: E) -> Self
+    where
+        E: Into<Box<dyn std::error::Error + Send + Sync>>,
+    {
         Self::new(StatusCode::INTERNAL_SERVER_ERROR, error.into().to_string())
     }
 

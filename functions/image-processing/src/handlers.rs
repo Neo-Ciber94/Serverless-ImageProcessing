@@ -1,5 +1,5 @@
 use image::ImageFormat;
-use image_processing::{error::ResponseError, process_image, ProcessingOptions};
+use image_processing::{error::ResponseError, process_image, ProcessImageError, ProcessingOptions};
 use lambda_http::{http::HeaderValue, Body, Request, RequestExt, Response};
 use lambda_runtime::Error;
 use reqwest::{header, StatusCode};
@@ -27,21 +27,33 @@ pub async fn image_handler(request: Request) -> Result<Response<Body>, ResponseE
             StatusCode::BAD_REQUEST,
             "query string should contains `source_url` or `source_base64`",
         ));
-    } else if query.source_base64.is_some() && query.source_url.is_some() {
+    }
+
+    if query.source_base64.is_some() && query.source_url.is_some() {
         return Err(ResponseError::new(
             StatusCode::BAD_REQUEST,
             "query string cannot contains both, `source_url` and `source_base64`",
         ));
-    } else if let Some(url) = query.source_url.take() {
-        handler_image_from_url(url, query)
-            .await
-            .map_err(|e| ResponseError::new(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
+    }
+
+    let result = if let Some(url) = query.source_url.take() {
+        handler_image_from_url(url, query).await
     } else if let Some(base64) = query.source_base64.take() {
-        handler_image_from_base64(base64, query)
-            .await
-            .map_err(|e| ResponseError::new(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
+        handler_image_from_base64(base64, query).await
     } else {
         unreachable!()
+    };
+
+    match result {
+        Ok(res) => Ok(res),
+        Err(err) => {
+            if err.is::<ProcessImageError>() {
+                let err = *err.downcast::<ProcessImageError>().unwrap();
+                Err(ResponseError::new(StatusCode::BAD_REQUEST, err.0))
+            } else {
+                Err(ResponseError::from_error(err))
+            }
+        }
     }
 }
 
@@ -73,7 +85,6 @@ async fn handler_image_from_url(
     let image_format: ImageFormat = image_buffer.format.into();
     let res_content_type = format!("image/{}", image_format.extensions_str()[0]);
 
-    //let body_base64 = general_purpose::STANDARD_NO_PAD.encode(&image_buffer.buf);
     let body = Body::Binary(image_buffer.buf);
     Response::builder()
         .header(
