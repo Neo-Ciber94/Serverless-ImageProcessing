@@ -11,9 +11,13 @@ pub struct ImageManipulationQuery {
     pub source_base64: Option<String>,
     pub width: Option<u32>,
     pub quality: Option<u8>,
+    pub blur: Option<f32>,
+
+    #[serde(default)]
+    pub grayscale: bool,
 }
 
-pub async fn endpoint(request: Request) -> Result<Response<Body>, ResponseError> {
+pub async fn get_image_endpoint(request: Request) -> Result<Response<Body>, ResponseError> {
     let query_map = request
         .query_string_parameters_ref()
         .ok_or_else(|| ResponseError::new(StatusCode::BAD_REQUEST, "missing image query params"))?;
@@ -58,10 +62,7 @@ pub async fn endpoint(request: Request) -> Result<Response<Body>, ResponseError>
 }
 
 #[tracing::instrument]
-async fn url_handler(
-    url: String,
-    query: ImageManipulationQuery,
-) -> Result<Response<Body>, Error> {
+async fn url_handler(url: String, query: ImageManipulationQuery) -> Result<Response<Body>, Error> {
     let res = reqwest::get(url).await?;
 
     let content_type = res
@@ -80,6 +81,8 @@ async fn url_handler(
         format,
         quality: query.quality,
         width: query.width,
+        grayscale: query.grayscale,
+        blur: query.blur,
     };
 
     let image_buffer = process_image(options).await?;

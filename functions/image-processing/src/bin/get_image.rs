@@ -1,7 +1,7 @@
 use lambda_http::{run, service_fn, Body, Error, IntoResponse, Request, Response};
 
 async fn function_handler(request: Request) -> Result<Response<Body>, Error> {
-    match image_processing::api::endpoint(request).await {
+    match image_processing::api::get_image_endpoint(request).await {
         Ok(res) => Ok(res),
         Err(err) => Ok(err.into_response().await),
     }
