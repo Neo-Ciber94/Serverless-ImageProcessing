@@ -1,7 +1,6 @@
-use std::convert::Infallible;
 use super::get_response_image;
+use crate::common::{FlipImage, ImageHandlerOptions, CropRect};
 use crate::error::ResponseError;
-use crate::common::{FlipImage, ImageHandlerOptions};
 use crate::utils::get_image_from_base64;
 use image::ImageFormat;
 use lambda_http::RequestExt;
@@ -9,6 +8,7 @@ use lambda_http::{Body, Error, Request, Response};
 use multer::parse_boundary;
 use reqwest::{header, StatusCode};
 use serde::Deserialize;
+use std::convert::Infallible;
 
 #[derive(Debug, Deserialize)]
 struct InputQuery {
@@ -19,6 +19,9 @@ struct InputQuery {
     pub brightness: Option<i32>,
     pub contrast: Option<f32>,
     pub hue: Option<i32>,
+
+    #[serde(flatten)]
+    pub crop: Option<CropRect>,
 
     #[serde(default)]
     pub grayscale: bool,
@@ -39,7 +42,7 @@ impl From<InputQuery> for ImageHandlerOptions {
             contrast: value.contrast,
             hue: value.hue,
             invert: value.invert,
-            crop: None,
+            crop: value.crop,
         }
     }
 }
