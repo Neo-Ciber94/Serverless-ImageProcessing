@@ -1,31 +1,15 @@
+use crate::error::ResponseError;
 use image::{imageops::FilterType, ImageFormat, ImageOutputFormat};
 use lambda_runtime::Error;
 use reqwest::StatusCode;
-use serde::{Deserialize, Serialize};
 use std::io::Cursor;
-
-use crate::error::ResponseError;
+use super::{FlipImage, CropRect};
 
 const DEFAULT_QUALITY: u8 = 100;
 const MAX_WITDH: u32 = 10_000;
 
-#[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
-#[serde(rename_all = "lowercase")]
-pub enum FlipImage {
-    Vertical,
-    Horizontal,
-}
-
-#[derive(Debug, Default, PartialEq, Eq, Deserialize)]
-pub struct Rect {
-    x: u32,
-    y: u32,
-    width: u32,
-    height: u32,
-}
-
 #[derive(Debug)]
-pub struct ImageManipulationQuery {
+pub struct ImageHandlerOptions {
     pub width: Option<u32>,
     pub quality: Option<u8>,
     pub blur: Option<f32>,
@@ -35,7 +19,7 @@ pub struct ImageManipulationQuery {
     pub contrast: Option<f32>,
     pub hue: Option<i32>,
     pub invert: bool,
-    pub crop: Option<Rect>,
+    pub crop: Option<CropRect>,
 }
 
 pub struct ImageByteBuffer {
@@ -43,12 +27,12 @@ pub struct ImageByteBuffer {
     pub format: ImageFormat,
 }
 
-pub async fn process_image(
-    buffer: Vec<u8>,
-    format: ImageFormat,
-    options: ImageManipulationQuery,
+pub async fn image_handler(
+    image_buffer: Vec<u8>,
+    image_format: ImageFormat,
+    options: ImageHandlerOptions,
 ) -> Result<ImageByteBuffer, Error> {
-    let ImageManipulationQuery {
+    let ImageHandlerOptions {
         width,
         quality,
         grayscale,
@@ -62,7 +46,7 @@ pub async fn process_image(
     } = options;
 
     tracing::info!(
-        options.format = format!("{format:?}"),
+        options.image_format = format!("{image_format:?}"),
         options.width = &width,
         options.quality = &quality,
         options.grayscale = &grayscale,
@@ -75,7 +59,7 @@ pub async fn process_image(
         options.crop = format!("{crop:?}"),
     );
 
-    let mut img = image::load(Cursor::new(buffer), format)?;
+    let mut img = image::load(Cursor::new(image_buffer), image_format)?;
 
     if let Some(width) = width {
         if width > MAX_WITDH {
@@ -123,7 +107,7 @@ pub async fn process_image(
     }
 
     if let Some(crop) = crop {
-        img = img.crop_imm(crop.x, crop.y, crop.width, crop.height);
+        img = img.crop_imm(crop.crop_x, crop.crop_y, crop.crop_width, crop.crop_height);
     }
 
     let total_bytes: usize = (img.width() * img.height()).try_into().unwrap_or(0);
@@ -135,7 +119,7 @@ pub async fn process_image(
     )?;
 
     Ok(ImageByteBuffer {
-        buf: cursor.get_ref().to_vec(),
+        buf: cursor.into_inner(),
         format: ImageFormat::Jpeg,
     })
 }

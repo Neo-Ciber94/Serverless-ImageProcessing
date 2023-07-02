@@ -1,17 +1,16 @@
 use std::convert::Infallible;
-
 use super::get_response_image;
 use crate::error::ResponseError;
-use crate::process_image::{FlipImage, ImageManipulationQuery};
+use crate::common::{FlipImage, ImageHandlerOptions};
 use crate::utils::get_image_from_base64;
 use image::ImageFormat;
 use lambda_http::RequestExt;
 use lambda_http::{Body, Error, Request, Response};
 use multer::parse_boundary;
 use reqwest::{header, StatusCode};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Deserialize)]
 struct InputQuery {
     pub width: Option<u32>,
     pub quality: Option<u8>,
@@ -28,9 +27,9 @@ struct InputQuery {
     pub invert: bool,
 }
 
-impl From<InputQuery> for ImageManipulationQuery {
+impl From<InputQuery> for ImageHandlerOptions {
     fn from(value: InputQuery) -> Self {
-        ImageManipulationQuery {
+        ImageHandlerOptions {
             width: value.width,
             quality: value.quality,
             flip: value.flip,
