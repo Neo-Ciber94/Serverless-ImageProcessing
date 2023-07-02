@@ -44,12 +44,12 @@ pub async fn process_image(options: ProcessingOptions) -> Result<ImageByteBuffer
     } = options;
 
     tracing::info!(
-        format = "{format:?}",
-        width = &width,
-        quality = &quality,
-        grayscale = &grayscale,
-        blur = &blur,
-        flip = &flip
+        options.format = format!("{format:?}"),
+        options.width = &width,
+        options.quality = &quality,
+        options.grayscale = &grayscale,
+        options.blur = &blur,
+        options.flip = format!("{flip:?}")
     );
 
     let mut img = image::load(Cursor::new(buffer), format)?;
