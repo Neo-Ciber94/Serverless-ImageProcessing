@@ -1,9 +1,19 @@
+use image_processing::error::ResponseError;
 use lambda_http::{run, service_fn, Body, Error, IntoResponse, Request, Response};
+use reqwest::header;
 
 async fn function_handler(request: Request) -> Result<Response<Body>, Error> {
     match image_processing::api::get_image_endpoint(request).await {
-        Ok(res) => Ok(res),
-        Err(err) => Ok(err.into_response().await),
+        Ok(mut res) => {
+            let seconds = 60 * 60 * 24 * 365; // 1 year
+            let value = header::HeaderValue::from_str(&format!("max-age={seconds}")).unwrap();
+            res.headers_mut().append(header::CACHE_CONTROL, value);
+            Ok(res)
+        }
+        Err(err) => match err.downcast::<ResponseError>() {
+            Ok(x) => Ok((*x).into_response().await),
+            Err(err) => Err(err),
+        },
     }
 }
 
@@ -48,7 +58,7 @@ async fn main() {
         let request = Request::from_parts(parts, Body::Binary(bytes.to_vec()))
             .with_query_string_parameters(query);
 
-        let res = match image_processing::api::get_image_endpoint(request).await {
+        let res = match function_handler(request).await {
             Ok(x) => x,
             Err(err) => {
                 return (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response();
