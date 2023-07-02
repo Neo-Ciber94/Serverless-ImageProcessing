@@ -1,5 +1,8 @@
 {
     "rust-analyzer.linkedProjects": [
         "./functions/image-processing/Cargo.toml"
+    ],
+    "rust-analyzer.cargo.features": [
+        "local"
     ]
 }
