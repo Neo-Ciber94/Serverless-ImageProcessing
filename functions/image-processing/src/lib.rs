@@ -4,4 +4,4 @@ mod process_image;
 
 pub mod utils;
 
-pub use process_image::{process_image, ImageByteBuffer, ProcessingOptions};
+pub use process_image::{process_image, ImageByteBuffer};

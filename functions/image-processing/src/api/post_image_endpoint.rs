@@ -1,9 +1,8 @@
 use std::convert::Infallible;
 
 use super::get_response_image;
-use super::response_image::ImageManipulationQuery;
 use crate::error::ResponseError;
-use crate::process_image::FlipImage;
+use crate::process_image::{FlipImage, ImageManipulationQuery};
 use crate::utils::get_image_from_base64;
 use image::ImageFormat;
 use lambda_http::RequestExt;
@@ -18,9 +17,15 @@ struct InputQuery {
     pub quality: Option<u8>,
     pub blur: Option<f32>,
     pub flip: Option<FlipImage>,
+    pub brightness: Option<i32>,
+    pub contrast: Option<f32>,
+    pub hue: Option<i32>,
 
     #[serde(default)]
     pub grayscale: bool,
+
+    #[serde(default)]
+    pub invert: bool,
 }
 
 impl From<InputQuery> for ImageManipulationQuery {
@@ -31,6 +36,11 @@ impl From<InputQuery> for ImageManipulationQuery {
             flip: value.flip,
             grayscale: value.grayscale,
             blur: value.blur,
+            brightness: value.brightness,
+            contrast: value.contrast,
+            hue: value.hue,
+            invert: value.invert,
+            crop: None,
         }
     }
 }
@@ -66,15 +76,7 @@ pub async fn post_image_endpoint(request: Request) -> Result<Response<Body>, Err
         get_form_file_bytes(bytes, content_type).await?
     };
 
-    let query = ImageManipulationQuery {
-        width: query.width,
-        quality: query.quality,
-        blur: query.blur,
-        flip: query.flip,
-        grayscale: query.grayscale,
-    };
-
-    get_response_image(buffer, format, query).await
+    get_response_image(buffer, format, query.into()).await
 }
 
 async fn get_body_base64_bytes(body: Vec<u8>) -> Result<(Vec<u8>, ImageFormat), Error> {

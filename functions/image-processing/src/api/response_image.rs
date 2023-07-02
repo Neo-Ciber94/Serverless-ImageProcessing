@@ -3,36 +3,27 @@ use image::ImageFormat;
 use lambda_http::{Body, Response};
 use lambda_runtime::Error;
 
-use crate::{
-    process_image::{process_image, FlipImage},
-    ProcessingOptions,
-};
-
-#[derive(Debug)]
-pub struct ImageManipulationQuery {
-    pub width: Option<u32>,
-    pub quality: Option<u8>,
-    pub blur: Option<f32>,
-    pub flip: Option<FlipImage>,
-    pub grayscale: bool,
-}
+use crate::process_image::{process_image, ImageManipulationQuery};
 
 pub async fn get_response_image(
     buffer: Vec<u8>,
     format: ImageFormat,
     query: ImageManipulationQuery,
 ) -> Result<Response<Body>, Error> {
-    let options = ProcessingOptions {
-        buffer,
-        format,
+    let options = ImageManipulationQuery {
         quality: query.quality,
         width: query.width,
         grayscale: query.grayscale,
         blur: query.blur,
         flip: query.flip,
+        brightness: query.brightness,
+        contrast: query.contrast,
+        hue: query.hue,
+        invert: query.invert,
+        crop: query.crop,
     };
 
-    let image_buffer = process_image(options).await?;
+    let image_buffer = process_image(buffer, format, options).await?;
     let image_format: ImageFormat = image_buffer.format.into();
     let res_content_type = format!("image/{}", image_format.extensions_str()[0]);
 

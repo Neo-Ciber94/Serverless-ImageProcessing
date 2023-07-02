@@ -1,12 +1,9 @@
 use super::get_response_image;
-use super::response_image::ImageManipulationQuery;
 use crate::error::ResponseError;
-use crate::process_image::FlipImage;
+use crate::process_image::{FlipImage, ImageManipulationQuery};
 use image::ImageFormat;
 use lambda_http::RequestExt;
 use lambda_http::{Body, Error, Request, Response};
-use once_cell::sync::Lazy;
-use regex::Regex;
 use reqwest::{header, StatusCode};
 use serde::{Deserialize, Serialize};
 
@@ -18,9 +15,15 @@ struct InputQuery {
     pub quality: Option<u8>,
     pub blur: Option<f32>,
     pub flip: Option<FlipImage>,
+    pub brightness: Option<i32>,
+    pub contrast: Option<f32>,
+    pub hue: Option<i32>,
 
     #[serde(default)]
     pub grayscale: bool,
+
+    #[serde(default)]
+    pub invert: bool,
 }
 
 impl From<InputQuery> for ImageManipulationQuery {
@@ -31,6 +34,11 @@ impl From<InputQuery> for ImageManipulationQuery {
             flip: value.flip,
             grayscale: value.grayscale,
             blur: value.blur,
+            brightness: value.brightness,
+            contrast: value.contrast,
+            hue: value.hue,
+            invert: value.invert,
+            crop: None,
         }
     }
 }
