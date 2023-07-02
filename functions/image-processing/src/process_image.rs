@@ -48,7 +48,8 @@ pub async fn process_image(options: ProcessingOptions) -> Result<ImageByteBuffer
         width = &width,
         quality = &quality,
         grayscale = &grayscale,
-        blur = &blur
+        blur = &blur,
+        flip = &flip
     );
 
     let mut img = image::load(Cursor::new(buffer), format)?;
