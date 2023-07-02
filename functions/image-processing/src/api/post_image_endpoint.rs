@@ -1,0 +1,115 @@
+use std::convert::Infallible;
+
+use super::get_response_image;
+use super::response_image::ImageManipulationQuery;
+use crate::error::ResponseError;
+use crate::process_image::FlipImage;
+use image::ImageFormat;
+use lambda_http::RequestExt;
+use lambda_http::{Body, Error, Request, Response};
+use multer::parse_boundary;
+use reqwest::{header, StatusCode};
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize)]
+struct InputQuery {
+    pub width: Option<u32>,
+    pub quality: Option<u8>,
+    pub blur: Option<f32>,
+    pub flip: Option<FlipImage>,
+
+    #[serde(default)]
+    pub grayscale: bool,
+}
+
+impl From<InputQuery> for ImageManipulationQuery {
+    fn from(value: InputQuery) -> Self {
+        ImageManipulationQuery {
+            width: value.width,
+            quality: value.quality,
+            flip: value.flip,
+            grayscale: value.grayscale,
+            blur: value.blur,
+        }
+    }
+}
+
+#[allow(dead_code)]
+struct FormFile {
+    file_name: String,
+    bytes: Vec<u8>,
+    content_type: String,
+}
+
+pub async fn post_image_endpoint(request: Request) -> Result<Response<Body>, Error> {
+    let query_map = request.query_string_parameters();
+    let query_str = query_map.to_query_string();
+    let query: InputQuery = serde_qs::from_str(&query_str)
+        .map_err(|e| ResponseError::new(StatusCode::BAD_REQUEST, e.to_string()))?;
+
+    let content_type = request
+        .headers()
+        .get(header::CONTENT_TYPE)
+        .ok_or_else(|| {
+            ResponseError::new(StatusCode::BAD_REQUEST, "missing content-type boundary")
+        })?
+        .to_str()
+        .map_err(ResponseError::from_error)?;
+
+    let boundary = parse_boundary(content_type).map_err(ResponseError::from_error)?;
+    let bytes = request.body().to_vec();
+    let mut multipart = multer::Multipart::new(
+        futures::stream::once(async move { Ok::<_, Infallible>(bytes) }),
+        boundary,
+    );
+
+    let mut form_file: Option<FormFile> = None;
+
+    while let Some(field) = multipart.next_field().await.unwrap() {
+        if let Some(file_name) = field.file_name() {
+            if form_file.is_some() {
+                return Err(ResponseError::new(
+                    StatusCode::BAD_REQUEST,
+                    "expected 1 file but received more than 1",
+                )
+                .into());
+            }
+
+            let file_name = file_name.to_owned();
+            let mime_type = field.content_type().ok_or_else(|| {
+                ResponseError::new(StatusCode::BAD_REQUEST, "unable to get file content-type")
+            })?;
+
+            let content_type = mime_type.essence_str().to_owned();
+            let bytes = field.bytes().await?.to_vec();
+            form_file = Some(FormFile {
+                file_name,
+                bytes,
+                content_type,
+            });
+        }
+    }
+
+    match form_file {
+        Some(file) => {
+            if !file.content_type.starts_with("image/") {
+                return Err(ResponseError::new(StatusCode::BAD_REQUEST, "expected image").into());
+            }
+
+            let buffer = file.bytes;
+            let format = ImageFormat::from_mime_type(&file.content_type)
+                .ok_or_else(|| ResponseError::new(StatusCode::BAD_REQUEST, "expected image"))?;
+
+            let query = ImageManipulationQuery {
+                width: query.width,
+                quality: query.quality,
+                blur: query.blur,
+                flip: query.flip,
+                grayscale: query.grayscale,
+            };
+
+            get_response_image(buffer, format, query).await
+        }
+        None => Err(ResponseError::new(StatusCode::BAD_REQUEST, "no file").into()),
+    }
+}

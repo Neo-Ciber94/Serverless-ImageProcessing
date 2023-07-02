@@ -6,6 +6,9 @@ edition = "2021"
 [[bin]]
 name = "get_image"
 
+[[bin]]
+name = "post_image"
+
 [dependencies]
 base64 = "0.21.2"
 image = "0.24.6"
@@ -30,6 +33,9 @@ axum = { version = "0.6.18", optional = true }
 hyper = { version = "0.14.27", optional = true }
 regex = "1.8.4"
 once_cell = "1.18.0"
+multer = "2.1.0"
+futures = "0.3.28"
+http = "0.2.9"
 
 
 [features]

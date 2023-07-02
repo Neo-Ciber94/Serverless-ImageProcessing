@@ -1,3 +1,5 @@
+use super::get_response_image;
+use super::response_image::ImageManipulationQuery;
 use crate::error::ResponseError;
 use crate::process_image::FlipImage;
 use base64::Engine as _;
@@ -8,8 +10,6 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 use reqwest::{header, StatusCode};
 use serde::{Deserialize, Serialize};
-use super::get_response_image;
-use super::response_image::ImageManipulationQuery;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct InputQuery {

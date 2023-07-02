@@ -9,10 +9,20 @@ export class ImageProcessingStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const handler = new lambda.Function(this, "Handler", {
+    const getImageHandler = new lambda.Function(this, "GetImage", {
       runtime: lambda.Runtime.PROVIDED_AL2,
       code: lambda.Code.fromAsset(path.join(__dirname, "..", "functions/image-processing/target/lambda/get_image")),
-      handler: "dummy",
+      handler: "dummy.one",
+      logRetention: awsLogs.RetentionDays.FIVE_DAYS,
+      memorySize: 128,
+      tracing: lambda.Tracing.ACTIVE,
+      timeout: cdk.Duration.minutes(3)
+    });
+
+    const postImageHandler = new lambda.Function(this, "PostImage", {
+      runtime: lambda.Runtime.PROVIDED_AL2,
+      code: lambda.Code.fromAsset(path.join(__dirname, "..", "functions/image-processing/target/lambda/post_image")),
+      handler: "dummy.two",
       logRetention: awsLogs.RetentionDays.FIVE_DAYS,
       memorySize: 128,
       tracing: lambda.Tracing.ACTIVE,
@@ -27,6 +37,8 @@ export class ImageProcessingStack extends cdk.Stack {
 
     const api = restApi.root.addResource("api");
     const imageEndpoint = api.addResource("image");
-    imageEndpoint.addMethod("GET", new apigateway.LambdaIntegration(handler));
+
+    imageEndpoint.addMethod("GET", new apigateway.LambdaIntegration(getImageHandler));
+    imageEndpoint.addMethod("POST", new apigateway.LambdaIntegration(postImageHandler));
   }
 }

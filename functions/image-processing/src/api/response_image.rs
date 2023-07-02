@@ -1,4 +1,4 @@
-use hyper::{header, http::HeaderValue};
+use http::{header, header::HeaderValue};
 use image::ImageFormat;
 use lambda_http::{Body, Response};
 use lambda_runtime::Error;
