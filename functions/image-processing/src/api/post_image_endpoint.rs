@@ -4,6 +4,7 @@ use super::get_response_image;
 use super::response_image::ImageManipulationQuery;
 use crate::error::ResponseError;
 use crate::process_image::FlipImage;
+use crate::utils::get_image_from_base64;
 use image::ImageFormat;
 use lambda_http::RequestExt;
 use lambda_http::{Body, Error, Request, Response};
@@ -56,10 +57,43 @@ pub async fn post_image_endpoint(request: Request) -> Result<Response<Body>, Err
         .to_str()
         .map_err(ResponseError::from_error)?;
 
-    let boundary = parse_boundary(content_type).map_err(ResponseError::from_error)?;
+    let mime: mime::Mime = content_type.parse().map_err(ResponseError::from_error)?;
     let bytes = request.body().to_vec();
+
+    let (buffer, format) = if mime == mime::APPLICATION_JSON {
+        get_body_base64_bytes(bytes).await?
+    } else {
+        get_form_file_bytes(bytes, content_type).await?
+    };
+
+    let query = ImageManipulationQuery {
+        width: query.width,
+        quality: query.quality,
+        blur: query.blur,
+        flip: query.flip,
+        grayscale: query.grayscale,
+    };
+
+    get_response_image(buffer, format, query).await
+}
+
+async fn get_body_base64_bytes(body: Vec<u8>) -> Result<(Vec<u8>, ImageFormat), Error> {
+    #[derive(Debug, Deserialize)]
+    struct Data {
+        base64_data: String,
+    }
+
+    let data = serde_json::from_slice::<Data>(&body)?;
+    get_image_from_base64(data.base64_data).await
+}
+
+async fn get_form_file_bytes(
+    body: Vec<u8>,
+    content_type: &str,
+) -> Result<(Vec<u8>, ImageFormat), Error> {
+    let boundary = parse_boundary(content_type).map_err(ResponseError::from_error)?;
     let mut multipart = multer::Multipart::new(
-        futures::stream::once(async move { Ok::<_, Infallible>(bytes) }),
+        futures::stream::once(async move { Ok::<_, Infallible>(body) }),
         boundary,
     );
 
@@ -92,23 +126,11 @@ pub async fn post_image_endpoint(request: Request) -> Result<Response<Body>, Err
 
     match form_file {
         Some(file) => {
-            if !file.content_type.starts_with("image/") {
-                return Err(ResponseError::new(StatusCode::BAD_REQUEST, "expected image").into());
-            }
-
             let buffer = file.bytes;
             let format = ImageFormat::from_mime_type(&file.content_type)
                 .ok_or_else(|| ResponseError::new(StatusCode::BAD_REQUEST, "expected image"))?;
 
-            let query = ImageManipulationQuery {
-                width: query.width,
-                quality: query.quality,
-                blur: query.blur,
-                flip: query.flip,
-                grayscale: query.grayscale,
-            };
-
-            get_response_image(buffer, format, query).await
+            Ok((buffer, format))
         }
         None => Err(ResponseError::new(StatusCode::BAD_REQUEST, "no file").into()),
     }
