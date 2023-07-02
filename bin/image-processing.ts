@@ -7,7 +7,9 @@ import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
 async function main() {
   const app = new cdk.App();
 
-  const ssmClient = new SSMClient({});
+  const ssmClient = new SSMClient({
+    region: process.env.AWS_REGION
+  });
   const apiKeysResult = await ssmClient.send(new GetParameterCommand({
     Name: "/image-handler/apikeys"
   }))
