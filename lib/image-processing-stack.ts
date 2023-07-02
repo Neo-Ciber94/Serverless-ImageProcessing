@@ -16,7 +16,7 @@ export class ImageProcessingStack extends cdk.Stack {
       logRetention: awsLogs.RetentionDays.FIVE_DAYS,
       memorySize: 128,
       tracing: lambda.Tracing.ACTIVE,
-      timeout: cdk.Duration.minutes(3)
+      timeout: cdk.Duration.minutes(3),
     });
 
     const postImageHandler = new lambda.Function(this, "PostImage", {

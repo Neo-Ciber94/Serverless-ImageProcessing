@@ -6,13 +6,20 @@ use hyper::{Method, StatusCode};
 use lambda_http::aws_lambda_events::query_map::QueryMap;
 use lambda_http::{Request, RequestExt};
 use std::future::Future;
+use tower_http::trace::TraceLayer;
 
 pub async fn handle_request<H, Fut>(path: &str, method: Method, handler: H)
 where
     H: Fn(Request) -> Fut + Send + Sync + Clone + 'static,
     Fut: Future<Output = Result<Response<lambda_http::Body>, lambda_http::Error>> + Send,
 {
-    let app = Router::new().route(
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::TRACE)
+        .with_target(false)
+        .without_time()
+        .init();
+
+    let app = Router::new().layer(TraceLayer::new_for_http()).route(
         path,
         axum::routing::any(
             move |req: axum::http::Request<axum::body::Body>| async move {

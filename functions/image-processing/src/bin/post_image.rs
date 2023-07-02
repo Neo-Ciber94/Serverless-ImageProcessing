@@ -32,5 +32,6 @@ async fn main() -> Result<(), Error> {
 async fn main() {
     use hyper::Method;
 
-    image_processing::utils::lambda_helper::handle_request("/", Method::POST, function_handler).await
+    image_processing::utils::lambda_helper::handle_request("/", Method::POST, function_handler)
+        .await
 }
