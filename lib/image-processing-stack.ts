@@ -31,15 +31,15 @@ export class ImageProcessingStack extends cdk.Stack {
 
     });
 
-    const restApi = new apigateway.RestApi(this, "Api", {
+    const api = new apigateway.RestApi(this, "Api", {
       restApiName: "ImageProcessing-Api",
       description: "ApiGateway for image processing handlers",
       binaryMediaTypes: ["*/*"]
     });
 
-    const usagePlan = restApi.addUsagePlan("UsagePlan", {
+    const usagePlan = api.addUsagePlan("UsagePlan", {
       apiStages: [{
-        stage: restApi.deploymentStage,
+        stage: api.deploymentStage,
       }],
       quota: {
         limit: 1000,
@@ -56,13 +56,16 @@ export class ImageProcessingStack extends cdk.Stack {
     }
 
     for (let i = 0; i < apiKeys.length; i++) {
-      const id = crypto.randomBytes(16).toString('base64');
-      const apiKey = apigateway.ApiKey.fromApiKeyId(this, `ApiKey-${id}`, apiKeys[i]);
+      const id = String(i);
+      const apiKey = api.addApiKey(`DevApiKeyId-${id}`, {
+        apiKeyName: `DevApiKey-${id}`,
+        value: apiKeys[i]
+      });
       usagePlan.addApiKey(apiKey);
     }
 
-    const api = restApi.root.addResource("api");
-    const imageEndpoint = api.addResource("image");
+    const apiEndpoint = api.root.addResource("api");
+    const imageEndpoint = apiEndpoint.addResource("image");
 
     imageEndpoint.addMethod("GET", new apigateway.LambdaIntegration(getImageHandler), {
       apiKeyRequired: true
