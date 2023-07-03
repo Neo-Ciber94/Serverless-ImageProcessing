@@ -47,7 +47,7 @@ impl From<InputQuery> for ImageHandlerOptions {
 }
 
 pub async fn get_image_endpoint(request: Request) -> Result<Response<Body>, Error> {
-    tracing::info("url: {:?}", request.uri().path_and_query());
+    tracing::info!("url: {:?}", request.uri().path_and_query());
 
     let query_map = request
         .query_string_parameters_ref()
