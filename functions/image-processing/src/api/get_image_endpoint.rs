@@ -47,6 +47,8 @@ impl From<InputQuery> for ImageHandlerOptions {
 }
 
 pub async fn get_image_endpoint(request: Request) -> Result<Response<Body>, Error> {
+    tracing::info("url: {:?}", request.uri().path_and_query());
+
     let query_map = request
         .query_string_parameters_ref()
         .ok_or_else(|| ResponseError::new(StatusCode::BAD_REQUEST, "missing image query params"))?;
@@ -82,7 +84,7 @@ pub async fn get_image_endpoint(request: Request) -> Result<Response<Body>, Erro
     }
 }
 
-#[tracing::instrument]
+#[tracing::instrument(level = "INFO")]
 async fn get_image_bytes_from_url(url: String) -> Result<(Vec<u8>, ImageFormat), Error> {
     let res = reqwest::get(url).await?;
 
@@ -100,7 +102,7 @@ async fn get_image_bytes_from_url(url: String) -> Result<(Vec<u8>, ImageFormat),
     Ok((buffer, format))
 }
 
-#[tracing::instrument]
+#[tracing::instrument(level = "INFO")]
 async fn get_image_bytes_from_base64(base64_text: String) -> Result<(Vec<u8>, ImageFormat), Error> {
     crate::utils::get_image_from_base64(base64_text).await
 }

@@ -55,6 +55,8 @@ struct FormFile {
 }
 
 pub async fn post_image_endpoint(request: Request) -> Result<Response<Body>, Error> {
+    tracing::info("url: {:?}", request.uri().path_and_query());
+    
     let query_map = request.query_string_parameters();
     let query_str = query_map.to_query_string();
     let query: InputQuery = serde_qs::from_str(&query_str)
