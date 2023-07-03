@@ -52,7 +52,7 @@ export class ImageProcessingStack extends cdk.Stack {
     }
 
     for (let i = 0; i < apiKeys.length; i++) {
-      const apiKey = restApi.addApiKey(`DevApiKey-${i}`, {
+      const apiKey = restApi.addApiKey(`DevApiKeyId-${i}`, {
         apiKeyName: `DevApiKey-${i}`,
         value: apiKeys[i]
       });
