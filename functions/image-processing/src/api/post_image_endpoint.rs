@@ -1,5 +1,5 @@
 use super::get_response_image;
-use crate::common::{FlipImage, ImageHandlerOptions, CropRect};
+use crate::common::ImageHandlerOptions;
 use crate::error::ResponseError;
 use crate::utils::get_image_from_base64;
 use image::ImageFormat;
@@ -9,43 +9,6 @@ use multer::parse_boundary;
 use reqwest::{header, StatusCode};
 use serde::Deserialize;
 use std::convert::Infallible;
-
-#[derive(Debug, Deserialize)]
-struct InputQuery {
-    pub width: Option<u32>,
-    pub quality: Option<u8>,
-    pub blur: Option<f32>,
-    pub flip: Option<FlipImage>,
-    pub brightness: Option<i32>,
-    pub contrast: Option<f32>,
-    pub hue: Option<i32>,
-
-    #[serde(flatten)]
-    pub crop: Option<CropRect>,
-
-    #[serde(default)]
-    pub grayscale: bool,
-
-    #[serde(default)]
-    pub invert: bool,
-}
-
-impl From<InputQuery> for ImageHandlerOptions {
-    fn from(value: InputQuery) -> Self {
-        ImageHandlerOptions {
-            width: value.width,
-            quality: value.quality,
-            flip: value.flip,
-            grayscale: value.grayscale,
-            blur: value.blur,
-            brightness: value.brightness,
-            contrast: value.contrast,
-            hue: value.hue,
-            invert: value.invert,
-            crop: value.crop,
-        }
-    }
-}
 
 #[allow(dead_code)]
 struct FormFile {
@@ -59,8 +22,10 @@ pub async fn post_image_endpoint(request: Request) -> Result<Response<Body>, Err
 
     let query_map = request.query_string_parameters();
     let query_str = query_map.to_query_string();
-    let query: InputQuery = serde_qs::from_str(&query_str)
+    let query: ImageHandlerOptions = serde_qs::from_str(&query_str)
         .map_err(|e| ResponseError::new(StatusCode::BAD_REQUEST, e.to_string()))?;
+
+    tracing::info!("query: {query_map:#?}");
 
     let content_type = request
         .headers()

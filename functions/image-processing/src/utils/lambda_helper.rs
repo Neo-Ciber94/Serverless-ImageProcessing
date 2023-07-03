@@ -14,7 +14,7 @@ where
     Fut: Future<Output = Result<Response<lambda_http::Body>, lambda_http::Error>> + Send,
 {
     tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::TRACE)
+        .with_max_level(tracing::Level::INFO)
         .with_target(false)
         .without_time()
         .init();

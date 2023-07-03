@@ -1,5 +1,5 @@
 use super::get_response_image;
-use crate::common::{CropRect, FlipImage, ImageHandlerOptions};
+use crate::common::ImageHandlerOptions;
 use crate::error::ResponseError;
 use image::ImageFormat;
 use lambda_http::RequestExt;
@@ -8,42 +8,12 @@ use reqwest::{header, StatusCode};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
-struct InputQuery {
+struct GetImageQuery {
     pub source_url: Option<String>,
     pub source_base64: Option<String>,
-    pub width: Option<u32>,
-    pub quality: Option<u8>,
-    pub blur: Option<f32>,
-    pub flip: Option<FlipImage>,
-    pub brightness: Option<i32>,
-    pub contrast: Option<f32>,
-    pub hue: Option<i32>,
 
     #[serde(flatten)]
-    pub crop: Option<CropRect>,
-
-    #[serde(default)]
-    pub grayscale: bool,
-
-    #[serde(default)]
-    pub invert: bool,
-}
-
-impl From<InputQuery> for ImageHandlerOptions {
-    fn from(value: InputQuery) -> Self {
-        ImageHandlerOptions {
-            width: value.width,
-            quality: value.quality,
-            flip: value.flip,
-            grayscale: value.grayscale,
-            blur: value.blur,
-            brightness: value.brightness,
-            contrast: value.contrast,
-            hue: value.hue,
-            invert: value.invert,
-            crop: value.crop,
-        }
-    }
+    pub options: ImageHandlerOptions,
 }
 
 pub async fn get_image_endpoint(request: Request) -> Result<Response<Body>, Error> {
@@ -53,8 +23,10 @@ pub async fn get_image_endpoint(request: Request) -> Result<Response<Body>, Erro
         .query_string_parameters_ref()
         .ok_or_else(|| ResponseError::new(StatusCode::BAD_REQUEST, "missing image query params"))?;
 
+    tracing::info!("query: {query_map:#?}");
+
     let query_str = query_map.to_query_string();
-    let mut query: InputQuery = serde_qs::from_str(&query_str)
+    let mut query: GetImageQuery = serde_qs::from_str(&query_str)
         .map_err(|e| ResponseError::new(StatusCode::BAD_REQUEST, e.to_string()))?;
 
     if query.source_base64.is_none() && query.source_url.is_none() {
@@ -75,10 +47,10 @@ pub async fn get_image_endpoint(request: Request) -> Result<Response<Body>, Erro
 
     if let Some(url) = query.source_url.take() {
         let (buffer, format) = get_image_bytes_from_url(url).await?;
-        get_response_image(buffer, format, query.into()).await
+        get_response_image(buffer, format, query.options).await
     } else if let Some(base64) = query.source_base64.take() {
         let (buffer, format) = get_image_bytes_from_base64(base64).await?;
-        get_response_image(buffer, format, query.into()).await
+        get_response_image(buffer, format, query.options).await
     } else {
         unreachable!()
     }

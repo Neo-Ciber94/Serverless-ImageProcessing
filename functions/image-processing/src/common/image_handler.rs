@@ -1,24 +1,31 @@
+use super::{CropRect, FlipImage};
 use crate::error::ResponseError;
 use image::{imageops::FilterType, ImageFormat, ImageOutputFormat};
 use lambda_runtime::Error;
 use reqwest::StatusCode;
+use serde::Deserialize;
 use std::io::Cursor;
-use super::{FlipImage, CropRect};
 
 const DEFAULT_QUALITY: u8 = 100;
 const MAX_WITDH: u32 = 10_000;
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
 pub struct ImageHandlerOptions {
     pub width: Option<u32>,
     pub quality: Option<u8>,
     pub blur: Option<f32>,
     pub flip: Option<FlipImage>,
-    pub grayscale: bool,
     pub brightness: Option<i32>,
     pub contrast: Option<f32>,
     pub hue: Option<i32>,
+
+    #[serde(default)]
+    pub grayscale: bool,
+
+    #[serde(default)]
     pub invert: bool,
+
+    #[serde(flatten)]
     pub crop: Option<CropRect>,
 }
 
@@ -27,6 +34,7 @@ pub struct ImageByteBuffer {
     pub format: ImageFormat,
 }
 
+#[tracing::instrument(skip(image_buffer), level = "INFO")]
 pub async fn image_handler(
     image_buffer: Vec<u8>,
     image_format: ImageFormat,
@@ -44,20 +52,6 @@ pub async fn image_handler(
         invert,
         crop,
     } = options;
-
-    tracing::info!(
-        options.image_format = format!("{image_format:?}"),
-        options.width = &width,
-        options.quality = &quality,
-        options.grayscale = &grayscale,
-        options.quality = &quality,
-        options.flip = format!("{flip:?}"),
-        options.contrast = &contrast,
-        options.brightness = &brightness,
-        options.invert = &invert,
-        options.hue = &hue,
-        options.crop = format!("{crop:?}"),
-    );
 
     let mut img = image::load(Cursor::new(image_buffer), image_format)?;
 
