@@ -4,10 +4,9 @@ import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as path from 'path';
 import * as awsLogs from 'aws-cdk-lib/aws-logs';
-import * as crypto from 'crypto';
 
 export class ImageProcessingStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, apiKeys: string[], props?: cdk.StackProps) {
+  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
     const getImageHandler = new lambda.Function(this, "GetImage", {
@@ -51,19 +50,12 @@ export class ImageProcessingStack extends cdk.Stack {
       },
     });
 
-    if (apiKeys.length <= 0) {
-      throw new Error("Expected at least 1 api key");
-    }
+    const apiKey = api.addApiKey(`DevApiKey`, {
+      apiKeyName: `ImageHandlerApiKey`,
+      value: process.env.API_KEY
+    });
 
-    for (let i = 0; i < apiKeys.length; i++) {
-      const id = String(i);
-      const apiKey = api.addApiKey(`DevApiKeyId-${id}`, {
-        apiKeyName: `DevApiKey-${id}`,
-        value: apiKeys[i]
-      });
-      usagePlan.addApiKey(apiKey);
-    }
-
+    usagePlan.addApiKey(apiKey);
     const apiEndpoint = api.root.addResource("api");
     const imageEndpoint = apiEndpoint.addResource("image");
 
