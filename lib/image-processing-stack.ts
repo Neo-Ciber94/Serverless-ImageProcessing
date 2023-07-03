@@ -39,7 +39,7 @@ export class ImageProcessingStack extends cdk.Stack {
 
     const usagePlan = restApi.addUsagePlan("UsagePlan", {
       apiStages: [{
-        stage: restApi.deploymentStage
+        stage: restApi.deploymentStage,
       }],
       quota: {
         limit: 1000,
@@ -55,15 +55,9 @@ export class ImageProcessingStack extends cdk.Stack {
       throw new Error("Expected at least 1 api key");
     }
 
-
-
     for (let i = 0; i < apiKeys.length; i++) {
       const id = crypto.randomBytes(16).toString('base64');
-      const apiKey = restApi.addApiKey(`DevApiKeyId-${id}`, {
-        apiKeyName: `DevApiKey-${id}`,
-        value: apiKeys[i]
-      });
-
+      const apiKey = apigateway.ApiKey.fromApiKeyId(this, `ApiKey-${id}`, apiKeys[i]);
       usagePlan.addApiKey(apiKey);
     }
 
