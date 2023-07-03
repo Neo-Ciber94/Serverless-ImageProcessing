@@ -4,6 +4,7 @@ import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as path from 'path';
 import * as awsLogs from 'aws-cdk-lib/aws-logs';
+import * as crypto from 'crypto';
 
 export class ImageProcessingStack extends cdk.Stack {
   constructor(scope: Construct, id: string, apiKeys: string[], props?: cdk.StackProps) {
@@ -54,11 +55,12 @@ export class ImageProcessingStack extends cdk.Stack {
       throw new Error("Expected at least 1 api key");
     }
 
-    const timestamp = Date.now();
+
 
     for (let i = 0; i < apiKeys.length; i++) {
-      const apiKey = restApi.addApiKey(`DevApiKeyId-${timestamp}`, {
-        apiKeyName: `DevApiKey-${timestamp}`,
+      const id = crypto.randomBytes(16).toString('base64');
+      const apiKey = restApi.addApiKey(`DevApiKeyId-${id}`, {
+        apiKeyName: `DevApiKey-${id}`,
         value: apiKeys[i]
       });
 
