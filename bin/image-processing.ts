@@ -8,7 +8,7 @@ async function main() {
   const app = new cdk.App();
 
   const ssmClient = new SSMClient({
-    region: process.env.AWS_REGION
+    region: process.env.AWS_DEFAULT_REGION
   });
   const apiKeysResult = await ssmClient.send(new GetParameterCommand({
     Name: "/image-handler/apikeys"
