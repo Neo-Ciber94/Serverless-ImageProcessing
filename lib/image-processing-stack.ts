@@ -37,6 +37,9 @@ export class ImageProcessingStack extends cdk.Stack {
     });
 
     const usagePlan = restApi.addUsagePlan("UsagePlan", {
+      apiStages: [{
+        stage: restApi.deploymentStage
+      }],
       quota: {
         limit: 1000,
         period: apigateway.Period.DAY
