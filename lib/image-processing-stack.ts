@@ -54,10 +54,11 @@ export class ImageProcessingStack extends cdk.Stack {
       throw new Error("Expected at least 1 api key");
     }
 
+    const timestamp = Date.now();
+
     for (let i = 0; i < apiKeys.length; i++) {
-      const now = Date.now();
-      const apiKey = restApi.addApiKey(`DevApiKeyId-${now}`, {
-        apiKeyName: `DevApiKey-${now}`,
+      const apiKey = restApi.addApiKey(`DevApiKeyId-${timestamp}`, {
+        apiKeyName: `DevApiKey-${timestamp}`,
         value: apiKeys[i]
       });
 
