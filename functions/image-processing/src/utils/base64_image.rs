@@ -1,15 +1,16 @@
+use crate::error::ResponseError;
+use base64::Engine as _;
 use http::StatusCode;
 use image::ImageFormat;
 use lambda_runtime::Error;
 use once_cell::sync::Lazy;
 use regex::Regex;
-use base64::Engine as _;
-use crate::error::ResponseError;
 
+#[tracing::instrument(level = "INFO")]
 pub async fn get_image_from_base64(base64_text: String) -> Result<(Vec<u8>, ImageFormat), Error> {
     static ERROR_MSG : &str = "failed to get base64 data, expected format: data:image/type;base64,ABCDEFGHIJKLMNOPQRStuvwxyz";
     static DATA_IMAGE_REGEX: Lazy<Regex> = Lazy::new(|| {
-        Regex::new(r"^data:image/?P<type>;base64,?P<data>").expect("failed to build regex")
+        Regex::new(r"data:image/(?P<type>\w+);base64,(?P<data>[a-zA-Z0-9+/=]+)").expect("failed to build regex")
     });
 
     let captures = DATA_IMAGE_REGEX
