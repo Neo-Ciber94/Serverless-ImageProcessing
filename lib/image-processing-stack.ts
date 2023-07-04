@@ -65,18 +65,5 @@ export class ImageProcessingStack extends cdk.Stack {
     imageEndpoint.addMethod("POST", new apigateway.LambdaIntegration(postImageHandler), {
       apiKeyRequired: true
     });
-
-    const getImageFunctionUrl = getImageHandler.addFunctionUrl();
-    const postImageFunctionUrl = postImageHandler.addFunctionUrl();
-
-    new cdk.CfnOutput(this, "GetImageFunctionUrl", {
-      value: getImageFunctionUrl.url,
-      description: "The url of the get image url function"
-    });
-
-    new cdk.CfnOutput(this, "PostImageFunctionUrl", {
-      value: postImageFunctionUrl.url,
-      description: "The url of the post image url function"
-    });
   }
 }
