@@ -12,7 +12,7 @@ export class ImageProcessingStack extends cdk.Stack {
     const getImageHandler = new lambda.Function(this, "GetImage", {
       runtime: lambda.Runtime.PROVIDED_AL2,
       code: lambda.Code.fromAsset(path.join(__dirname, "..", "functions/image-processing/target/lambda/get_image")),
-      handler: "dummy.one",
+      handler: "getimage.handler",
       logRetention: awsLogs.RetentionDays.FIVE_DAYS,
       memorySize: 128,
       tracing: lambda.Tracing.ACTIVE,
@@ -22,12 +22,11 @@ export class ImageProcessingStack extends cdk.Stack {
     const postImageHandler = new lambda.Function(this, "PostImage", {
       runtime: lambda.Runtime.PROVIDED_AL2,
       code: lambda.Code.fromAsset(path.join(__dirname, "..", "functions/image-processing/target/lambda/post_image")),
-      handler: "dummy.two",
+      handler: "postimage.handler",
       logRetention: awsLogs.RetentionDays.FIVE_DAYS,
       memorySize: 128,
       tracing: lambda.Tracing.ACTIVE,
       timeout: cdk.Duration.minutes(3),
-
     });
 
     const api = new apigateway.RestApi(this, "Api", {
@@ -65,6 +64,19 @@ export class ImageProcessingStack extends cdk.Stack {
 
     imageEndpoint.addMethod("POST", new apigateway.LambdaIntegration(postImageHandler), {
       apiKeyRequired: true
+    });
+
+    const getImageFunctionUrl = getImageHandler.addFunctionUrl();
+    const postImageFunctionUrl = postImageHandler.addFunctionUrl();
+
+    new cdk.CfnOutput(this, "GetImageFunctionUrl", {
+      value: getImageFunctionUrl.url,
+      description: "The url of the get image url function"
+    });
+
+    new cdk.CfnOutput(this, "PostImageFunctionUrl", {
+      value: postImageFunctionUrl.url,
+      description: "The url of the post image url function"
     });
   }
 }
