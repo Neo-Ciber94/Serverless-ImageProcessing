@@ -25,8 +25,6 @@ pub async fn post_image_endpoint(request: Request) -> Result<Response<Body>, Err
     let query: ImageHandlerOptions = serde_qs::from_str(&query_str)
         .map_err(|e| ResponseError::new(StatusCode::BAD_REQUEST, e.to_string()))?;
 
-    tracing::info!("query: {query_map:#?}");
-
     let content_type = request
         .headers()
         .get(header::CONTENT_TYPE)

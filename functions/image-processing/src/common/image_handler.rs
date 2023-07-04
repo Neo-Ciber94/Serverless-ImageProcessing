@@ -4,6 +4,7 @@ use image::{imageops::FilterType, ImageFormat, ImageOutputFormat};
 use lambda_runtime::Error;
 use reqwest::StatusCode;
 use serde::Deserialize;
+use serde_aux::prelude::*;
 use std::io::Cursor;
 
 const DEFAULT_QUALITY: u8 = 100;
@@ -11,18 +12,35 @@ const MAX_WITDH: u32 = 10_000;
 
 #[derive(Debug, Deserialize)]
 pub struct ImageHandlerOptions {
+    #[serde(default, deserialize_with = "deserialize_option_number_from_string")]
     pub width: Option<u32>,
+
+    #[serde(default, deserialize_with = "deserialize_option_number_from_string")]
     pub quality: Option<u8>,
+
+    #[serde(default, deserialize_with = "deserialize_option_number_from_string")]
     pub blur: Option<f32>,
-    pub flip: Option<FlipImage>,
+
+    #[serde(default, deserialize_with = "deserialize_option_number_from_string")]
     pub brightness: Option<i32>,
+
+    #[serde(default, deserialize_with = "deserialize_option_number_from_string")]
     pub contrast: Option<f32>,
+
+    #[serde(default, deserialize_with = "deserialize_option_number_from_string")]
     pub hue: Option<i32>,
 
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_option_number_from_string")]
+    pub sharp: Option<f32>,
+
+    pub flip: Option<FlipImage>,
+
+    pub flop: Option<FlipImage>,
+
+    #[serde(default, deserialize_with = "deserialize_bool_from_anything")]
     pub grayscale: bool,
 
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_bool_from_anything")]
     pub invert: bool,
 
     #[serde(flatten)]
@@ -46,8 +64,10 @@ pub async fn image_handler(
         grayscale,
         blur,
         flip,
+        flop,
         contrast,
         brightness,
+        sharp,
         hue,
         invert,
         crop,
@@ -77,8 +97,19 @@ pub async fn image_handler(
         img = img.blur(blur)
     }
 
+    if let Some(sharp) = sharp {
+        img = img.unsharpen(sharp, 1);
+    }
+
     if let Some(flip) = flip {
         img = match flip {
+            FlipImage::Vertical => img.flipv(),
+            FlipImage::Horizontal => img.fliph(),
+        };
+    }
+
+    if let Some(flop) = flop {
+        img = match flop {
             FlipImage::Vertical => img.flipv(),
             FlipImage::Horizontal => img.fliph(),
         };

@@ -1,5 +1,5 @@
 mod image_handler;
-mod models;
+mod types;
 
 pub use image_handler::{image_handler, ImageByteBuffer, ImageHandlerOptions};
-pub use models::{FlipImage, CropRect};
+pub use types::{FlipImage, CropRect};

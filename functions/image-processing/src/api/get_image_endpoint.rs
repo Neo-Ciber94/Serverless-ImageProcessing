@@ -23,8 +23,6 @@ pub async fn get_image_endpoint(request: Request) -> Result<Response<Body>, Erro
         .query_string_parameters_ref()
         .ok_or_else(|| ResponseError::new(StatusCode::BAD_REQUEST, "missing image query params"))?;
 
-    tracing::info!("query: {query_map:#?}");
-
     let query_str = query_map.to_query_string();
     let mut query: GetImageQuery = serde_qs::from_str(&query_str)
         .map_err(|e| ResponseError::new(StatusCode::BAD_REQUEST, e.to_string()))?;
