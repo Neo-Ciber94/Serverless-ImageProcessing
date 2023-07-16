@@ -4,5 +4,8 @@
     ],
     "rust-analyzer.cargo.features": [
         "local"
+    ],
+    "cSpell.words": [
+        "Grayscale"
     ]
 }

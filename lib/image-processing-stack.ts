@@ -4,6 +4,7 @@ import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as path from 'path';
 import * as awsLogs from 'aws-cdk-lib/aws-logs';
+import { RestApiKey } from './RestApiKey';
 
 export class ImageProcessingStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -35,26 +36,9 @@ export class ImageProcessingStack extends cdk.Stack {
       binaryMediaTypes: ["*/*"]
     });
 
-    const usagePlan = api.addUsagePlan("UsagePlan", {
-      apiStages: [{
-        stage: api.deploymentStage,
-      }],
-      quota: {
-        limit: 1000,
-        period: apigateway.Period.DAY
-      },
-      throttle: {
-        burstLimit: 10,
-        rateLimit: 5
-      },
-    });
+    // Require an api key to use the endpoints
+    new RestApiKey(api);
 
-    const apiKey = api.addApiKey(`DevApiKey`, {
-      apiKeyName: `ImageHandlerApiKey`,
-      value: process.env.API_KEY
-    });
-
-    usagePlan.addApiKey(apiKey);
     const apiEndpoint = api.root.addResource("api");
     const imageEndpoint = apiEndpoint.addResource("image");
 
